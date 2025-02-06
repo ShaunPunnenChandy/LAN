@@ -21,4 +21,18 @@ def get_model():
     # Initialize model
     model = module.Restormer(LayerNorm_type='BiasFree').to(device)
     
-    
+    # Check for checkpoint
+    checkpoint_path = "./checkpoint/real_denoising.pth"
+    if os.path.exists(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, map_location=device).get("params", None)
+        
+        if checkpoint is not None:
+            model.load_state_dict(checkpoint, strict=False)
+            print(f"✅ Checkpoint '{checkpoint_path}' loaded successfully.")
+        else:
+            print(f"⚠️ Warning: Checkpoint '{checkpoint_path}' is empty or invalid. Proceeding without loading.")
+    else:
+        print(f"⚠️ Warning: Checkpoint file '{checkpoint_path}' not found. Proceeding without loading.")
+
+    model.eval()
+    return model
