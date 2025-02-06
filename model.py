@@ -1,14 +1,24 @@
-import importlib
-from pathlib import Path
 import torch
+import importlib.util
+import os
+from pathlib import Path
 
 def get_model():
     path = 'Restormer.basicsr.models.archs.restormer_arch'
-    module_spec = importlib.util.spec_from_file_location(path, str(Path().joinpath(*path.split('.')))+'.py')
+    
+    # Load the Restormer module dynamically
+    module_spec = importlib.util.spec_from_file_location(path, str(Path().joinpath(*path.split('.'))) + '.py')
     module = importlib.util.module_from_spec(module_spec)
     module_spec.loader.exec_module(module)
-    model = module.Restormer(LayerNorm_type = 'BiasFree').cuda()
-    checkpoint = torch.load("./checkpoint/real_denoising.pth")["params"]
-    model.load_state_dict(checkpoint, strict=False)
-    model.eval()
-    return model
+    
+    # Set device (GPU if available, otherwise CPU)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # Check if Restormer class exists in module
+    if not hasattr(module, "Restormer"):
+        raise ImportError("Restormer class not found in the module. Check your model path.")
+    
+    # Initialize model
+    model = module.Restormer(LayerNorm_type='BiasFree').to(device)
+    
+    
